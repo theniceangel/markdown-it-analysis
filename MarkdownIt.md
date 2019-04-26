@@ -317,6 +317,6 @@ MarkdownIt.prototype.renderInline = function (src, env) {
 
 ```
 
-随着一步步对 MarkdownIt 的剖析之后，是不是惊叹于 Markdown 的架构设计，至少对于我来说，很多信息通过代码的组织以及变量命名就已经传达给我了，这也体现了阅读优秀源码的价值。
+随着一步步对 MarkdownIt 的剖析之后，是不是惊叹于 Markdown 的架构设计，至少对于我来说，很多信息通过代码的组织以及变量命名就已经传达给我了，这也体现了阅读优秀源码的好处。
 
-下一篇文章，将进一步深挖 Ruler 以及 Token 这两个基础类。
+下一篇文章，将讲解 Ruler 以及 Token 这两个基础类。
