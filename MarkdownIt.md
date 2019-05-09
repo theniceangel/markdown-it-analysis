@@ -258,8 +258,8 @@ MarkdownIt.prototype.use = function (plugin /*, params, ... */) {
 
 ```js
 // 1.，输入必须是字符串
-// 2. State 是 ParserCore 的状态管理类，保存了 md 单例、src 编译字符串、tokens 词法单元等重要信息。
-// 3.每种 Parser(ParserInline & ParserBlock) 都有对应的状态管理类，内部的实现有一定区别。
+// 2. State 是 CoreParser 的状态管理类，保存了 md 单例、src 编译字符串、tokens 词法单元等重要信息。
+// 3.每种 Parser(InlineParser & BlockParser) 都有对应的状态管理类，内部的实现有一定区别。
 MarkdownIt.prototype.parse = function (src, env) {
   if (typeof src !== 'string') {
     throw new Error('Input data should be a String');

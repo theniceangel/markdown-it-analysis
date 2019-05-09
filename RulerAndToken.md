@@ -8,7 +8,7 @@
 
 md 接收一个字符串，经过一系列的 parser 的处理，变成了一个个 token，接着调用 render 对应的rule，将 token 作为输入，最后输出 HTML 字符串。
 
-先来看下 Token 的定义，位于 `lib/token.js`
+先来看下 Token 的定义，位于 `lib/token.js`。
 
 ```js
 function Token(type, tag, nesting) {
@@ -47,7 +47,7 @@ function Token(type, tag, nesting) {
 
 - **tag**
 
-  标签名称，比如 `p`、`strong`、`空字符串`(代表是文字)等等。
+  标签名称，比如 `p`、`strong`、`''`(空字符串。代表是文字)等等。
 
 - **attrs**
 
@@ -92,7 +92,7 @@ function Token(type, tag, nesting) {
 
 - **info**
 
-  type 为 fence 的类型。什么是 fence呢，如下：
+  type 为 fence 的类型。什么是 fence 呢，如下：
 
   ````js
   /**
@@ -119,6 +119,7 @@ function Token(type, tag, nesting) {
 接下来看一下原型上的方法。
 
 - **attrIndex()**
+
   ```js
   Token.prototype.attrIndex = function attrIndex(name) {
     var attrs, i, len;
@@ -194,12 +195,12 @@ function Token(type, tag, nesting) {
   };
   ```
 
-  根据 name 将当前的 value 拼接到以前的 value上去。
+  根据 name 将当前的 value 拼接到以前的 value 上去。
 
 ## Token 小结
 
 Token 是 MarkdownIt 内部最基础的类，也是最小的分割单元。它是 parse 的产物，也是 output 的依据。
-再来看下 MarkdownIt 另外的一个类—— Ruler，可以认为它是职责链函数的管理器。因为它内部存储了很多 rule 函数，而这些功能不同的 rule 的作用就是用来生成 token 并且将 token render 成最后的 HTML 字符串。
+再来看下 MarkdownIt 另外的一个类 —— Ruler，可以认为它是职责链函数的管理器。因为它内部存储了很多 rule 函数，而这些功能不同的 rule 的作用就是用来生成 token 并且将 token render 成最后的 HTML 字符串。
 
 先从 constructor 说起。
 
@@ -211,7 +212,7 @@ function Ruler() {
 }
 ```
 
-- **__rules__**
+- **\_\_rules\_\_**
 
   用来放所有的 rule 对象，它的结构如下：
 
@@ -240,7 +241,7 @@ function Ruler() {
 
 再来分析一下原型上各个方法的作用。
 
-- **__find__**
+- **\_\_find\_\_**
 
   ```js
   Ruler.prototype.__find__ = function (name) {
@@ -255,7 +256,7 @@ function Ruler() {
 
   根据 rule name 查找它在 \_\_rules\_\_ 的索引。
 
-- **__compile__**
+- **\_\_compile\_\_**
 
   ```js
   Ruler.prototype.__compile__ = function () {
@@ -457,4 +458,4 @@ function Ruler() {
 
   ## 总结
 
-  分析完了 Token 与 Ruler 这些基础类，我们将进一步揭开 MarkdownIt 源码的面纱。后面的文章，再分析怎么从 src 字符串 parse 生成 token的，token 又是怎么被 renderer.render 输出成最后的字符串的。下一篇，我们将进入 MarkdownIt 的 入口 parser —— CoreParser 的分析。
+  分析完了 Token 与 Ruler 这些基础类，我们将进一步揭开 MarkdownIt 源码的面纱。后面的文章，再分析怎么从 src 字符串 parse 生成 token 的，token 又是怎么被 renderer.render 输出成最后的字符串的。下一篇，我们将进入 MarkdownIt 的入口 parser —— CoreParser 的分析。
