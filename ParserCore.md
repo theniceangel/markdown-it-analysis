@@ -96,7 +96,7 @@ StateCore.prototype.Token = Token;
 
 类比较简单，`src` 用来放用户输入的字符串，tokens 用来 parse 出来的 token。`inlineMode` 表示 parse 的时候是否编译成 type 为 inline 的 token。`md` 就是当前 MarkdownIt 的示例。
 
-而属于 CoreParser 的 rules 到底是具有啥作用呢，我们先粗略了解一下。它们都在 `lib/rules_core` 文件夹。
+而属于 ParserCore 的 rules 到底是具有啥作用呢，我们先粗略了解一下。它们都在 `lib/rules_core` 文件夹。
 
 1. **normalize.js**
 
@@ -134,7 +134,7 @@ module.exports = function block(state) {
 };
 ```
 
-内部逻辑很清晰，先判断是否开启 inline 模式的 parse。否则通过 md 调用 BlockParser 的 parse 方法。这一步是将换行分隔符(`\n`) 作为 src 的划分界限，生成很多 `block: true` 的 token。我们在接下来的一篇关于 BlockParser 分析的文章里面详细阐述。
+内部逻辑很清晰，先判断是否开启 inline 模式的 parse。否则通过 md 调用 ParserBlock 的 parse 方法。这一步是将换行分隔符(`\n`) 作为 src 的划分界限，生成很多 block 为 true 的token。我们在接下来的一篇关于 ParserBlock 分析的文章里面详细阐述。
 
 3. **inline.js**
 
@@ -152,13 +152,13 @@ module.exports = function inline(state) {
 };
 ```
 
-这一步是在 BlockParser 之后的，因为 BlockParser 处理之后会生成 type 为 inline 的token。这种 token 属于未完全解析的 token，需要 inlineParser 进一步处理，生成新的token。这些新生成的token 会存放在 children 属性上。举个栗子来说：
+这一步是在 ParserBlock 之后的，因为 ParserBlock 处理之后会生成 type 为 inline 的token。这种 token 属于未完全解析的 token，需要 ParserInline 进一步处理，生成新的token。这些新生成的token 会存放在 children 属性上。举个栗子来说：
 
 ```js
 const src = '__ad__'
 md.render(src)
 
-// 1.经过 BlockParser 处理之后是这样的 token：
+// 1.经过 ParserBlock 处理之后是这样的 token：
 
 {
   type: "inline",
@@ -173,7 +173,7 @@ md.render(src)
 }
 // 从 content 可以看出 '__' 并未生成 token，这个符号代表强调的意思，应该替换成 strong 标签
 
-// 2.再经过 InlineBlock 处理之后，会发现 children 多了 5 个 token。代码如下
+// 2.再经过 ParserInline 处理之后，会发现 children 多了 5 个 token。代码如下
 {
   ...,
   children: [
@@ -198,7 +198,7 @@ md.render(src)
 // 最后传给 md.renderer.render 之后，就能生成加粗的文字了。
 ```
 
-InlineParser 的揭秘，安排在 BlockParser 的下一篇。
+ParserInline 的揭秘，安排在 ParserBlock 的下一篇。
 
 4. **linkify.js**
 
@@ -311,7 +311,7 @@ module.exports = function linkify(state) {
 };
 ```
 
-这个 rule 的作用就是将 URL-like 的字符串转化成超链接。这个 rule 是否执行，是根据你实例化 md 传入的 `options.linkify` 有关。内部检测 URL-like 的字符串用的库是 `linkify-it`。里面对很多种 url 格式做了检验，有兴趣的可以详细研究一下。
+这个 rule 的作用就是将 URL-like 的字符串转化成超链接。rule 是否执行，是根据你实例化 md 传入的 `options.linkify` 有关。内部检测 URL-like 的字符串用的库是 `linkify-it`。里面对很多种 url 格式做了检验，有兴趣的可以详细研究一下。
 
 5. **replacements.js**
 
@@ -391,4 +391,4 @@ function rule (state) {
 
 ## 总结
 
-分析完了 CoreParser，让我们从整体上对 MarkdownIt 的原理有了一定的了解。下两篇文章，我们分别详细分析 BlockParser 和 InlineParser，这两部分篇幅会比较长，因为这为最后的 render 打好坚实的基础。
+分析完了 ParserCore，让我们从整体上对 MarkdownIt 的原理有了一定的了解。下两篇文章，我们分别详细分析 ParserBlock 和 ParserInline，这两部分篇幅会比较长，因为这属于核心的 parse 逻辑。
