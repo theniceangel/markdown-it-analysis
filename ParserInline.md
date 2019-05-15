@@ -411,3 +411,290 @@ ParserInline.prototype.tokenize = function (state) {
   作用是解析图片。
 
   markdown 语法： `![image](<src> "title")`。
+
+- **autolink.js**
+
+  ```js
+  module.exports = function autolink(state, silent) {
+    var tail, linkMatch, emailMatch, url, fullUrl, token,
+        pos = state.pos;
+
+    if (state.src.charCodeAt(pos) !== 0x3C/* < */) { return false; }
+
+    tail = state.src.slice(pos);
+
+    if (tail.indexOf('>') < 0) { return false; }
+
+    if (AUTOLINK_RE.test(tail)) {
+      linkMatch = tail.match(AUTOLINK_RE);
+
+      url = linkMatch[0].slice(1, -1);
+      fullUrl = state.md.normalizeLink(url);
+      if (!state.md.validateLink(fullUrl)) { return false; }
+
+      if (!silent) {
+        token         = state.push('link_open', 'a', 1);
+        token.attrs   = [ [ 'href', fullUrl ] ];
+        token.markup  = 'autolink';
+        token.info    = 'auto';
+
+        token         = state.push('text', '', 0);
+        token.content = state.md.normalizeLinkText(url);
+
+        token         = state.push('link_close', 'a', -1);
+        token.markup  = 'autolink';
+        token.info    = 'auto';
+      }
+
+      state.pos += linkMatch[0].length;
+      return true;
+    }
+
+    if (EMAIL_RE.test(tail)) {
+      emailMatch = tail.match(EMAIL_RE);
+
+      url = emailMatch[0].slice(1, -1);
+      fullUrl = state.md.normalizeLink('mailto:' + url);
+      if (!state.md.validateLink(fullUrl)) { return false; }
+
+      if (!silent) {
+        token         = state.push('link_open', 'a', 1);
+        token.attrs   = [ [ 'href', fullUrl ] ];
+        token.markup  = 'autolink';
+        token.info    = 'auto';
+
+        token         = state.push('text', '', 0);
+        token.content = state.md.normalizeLinkText(url);
+
+        token         = state.push('link_close', 'a', -1);
+        token.markup  = 'autolink';
+        token.info    = 'auto';
+      }
+
+      state.pos += emailMatch[0].length;
+      return true;
+    }
+
+    return false;
+  };
+  ```
+
+  可以看到 autolink 就是解析 `<` 与 `>` 之间的 url。
+
+  markdown 语法： `<http://somewhere.com>`。
+
+- **html_inline.js**
+
+  ```js
+  module.exports = function html_inline(state, silent) {
+    var ch, match, max, token,
+        pos = state.pos;
+
+    if (!state.md.options.html) { return false; }
+
+    // Check start
+    max = state.posMax;
+    if (state.src.charCodeAt(pos) !== 0x3C/* < */ ||
+        pos + 2 >= max) {
+      return false;
+    }
+
+    // Quick fail on second char
+    ch = state.src.charCodeAt(pos + 1);
+    if (ch !== 0x21/* ! */ &&
+        ch !== 0x3F/* ? */ &&
+        ch !== 0x2F/* / */ &&
+        !isLetter(ch)) {
+      return false;
+    }
+
+    match = state.src.slice(pos).match(HTML_TAG_RE);
+    if (!match) { return false; }
+
+    if (!silent) {
+    token         = state.push('html_inline', '', 0);
+    token.content = state.src.slice(pos, pos + match[0].length);
+  }
+  state.pos += match[0].length;
+  return true;
+  };
+  ```
+
+  解析 HTML 行内标签。
+
+  markdown 语法： `<span>inline html</span>`。
+
+- **entity.js**
+
+  ```js
+  module.exports = function entity(state, silent) {
+    var ch, code, match, pos = state.pos, max = state.posMax;
+
+    if (state.src.charCodeAt(pos) !== 0x26/* & */) { return false; }
+
+    if (pos + 1 < max) {
+      ch = state.src.charCodeAt(pos + 1);
+
+      if (ch === 0x23 /* # */) {
+        match = state.src.slice(pos).match(DIGITAL_RE);
+        if (match) {
+          if (!silent) {
+            code = match[1][0].toLowerCase() === 'x' ? parseInt(match[1].slice(1), 16) : parseInt(match[1], 10);
+            state.pending += isValidEntityCode(code) ? fromCodePoint(code) : fromCodePoint(0xFFFD);
+          }
+          state.pos += match[0].length;
+          return true;
+        }
+      } else {
+        match = state.src.slice(pos).match(NAMED_RE);
+        if (match) {
+          if (has(entities, match[1])) {
+            if (!silent) { state.pending += entities[match[1]]; }
+            state.pos += match[0].length;
+            return true;
+          }
+        }
+      }
+    }
+
+    if (!silent) { state.pending += '&'; }
+    state.pos++;
+    return true;
+  };
+  ```
+
+  解析 HTML 实体标签，比如 `&nbsp;`、`&quot;`、`&apos;` 等等。
+
+这就是 `ParserInline.prototype.tokenize` 的全流程，也就是 type 为 inline 的 token 经过 ruler 的所有 rule 处理之后，生成了不同的 children token 存储到 token 的 children 属性上了。但是 `ParserInline.prototype.parse` 并没有完成，它还要经过 ruler2 的所有 rule 处理。它们分别是 `balance_pairs.js`、`strikethrough.postProcess`、`emphasis.postProcess`、`text_collapse.js`。
+
+- **balance_pairs.js**
+
+  ```js
+  module.exports = function link_pairs(state) {
+    var i, j, lastDelim, currDelim,
+        delimiters = state.delimiters,
+        max = state.delimiters.length;
+
+    for (i = 0; i < max; i++) {
+      lastDelim = delimiters[i];
+
+      if (!lastDelim.close) { continue; }
+
+      j = i - lastDelim.jump - 1;
+
+      while (j >= 0) {
+        currDelim = delimiters[j];
+
+        if (currDelim.open &&
+            currDelim.marker === lastDelim.marker &&
+            currDelim.end < 0 &&
+            currDelim.level === lastDelim.level) {
+
+          // typeofs are for backward compatibility with plugins
+          var odd_match = (currDelim.close || lastDelim.open) &&
+                          typeof currDelim.length !== 'undefined' &&
+                          typeof lastDelim.length !== 'undefined' &&
+                          (currDelim.length + lastDelim.length) % 3 === 0;
+
+          if (!odd_match) {
+            lastDelim.jump = i - j;
+            lastDelim.open = false;
+            currDelim.end  = i;
+            currDelim.jump = 0;
+            break;
+          }
+        }
+
+        j -= currDelim.jump + 1;
+      }
+    }
+  };
+  ```
+
+  处理 state.delimiters 数组，主要是给诸如 `*`、`~` 等找到配对的开闭标签。
+
+- `strikethrough.postProcess`
+
+  位于 `lib/rules_inline/strikethrough`，函数是处理 `~` 字符，生成 `<s>` 标签的 token。
+
+- `emphasis.postProcess`
+
+  位于 `lib/rules_inline/emphasis`，函数是处理 `*` 或者 `_` 字符，生成 `<strong>` 或者 `<em>` 标签的 token。
+
+- `text_collapse.js`
+
+  ```js
+  module.exports = function text_collapse(state) {
+    var curr, last,
+        level = 0,
+        tokens = state.tokens,
+        max = state.tokens.length;
+
+    for (curr = last = 0; curr < max; curr++) {
+      // re-calculate levels
+      level += tokens[curr].nesting;
+      tokens[curr].level = level;
+
+      if (tokens[curr].type === 'text' &&
+          curr + 1 < max &&
+          tokens[curr + 1].type === 'text') {
+
+        // collapse two adjacent text nodes
+        tokens[curr + 1].content = tokens[curr].content + tokens[curr + 1].content;
+      } else {
+        if (curr !== last) { tokens[last] = tokens[curr]; }
+
+        last++;
+      }
+    }
+
+    if (curr !== last) {
+      tokens.length = last;
+    }
+  };
+  ```
+
+  函数是用来合并相邻的文本节点。举个栗子
+
+  ```js
+  const src = '12_'
+
+  md.parse(src)
+  // state.tokens 如下
+
+  [
+    {
+      content:"12",
+      tag:"",
+      type:"text"
+    },
+    {
+      content:"_",
+      tag:"",
+      type:"text",
+      ...
+    }
+  ]
+
+  // 经过 text_collapse 函数之后，
+
+  [
+    {
+      content:"12_",
+      tag:"",
+      type:"text"
+    }
+  ]
+  ```
+
+至此，ParserInline 就已经走完了。如果你打 debugger 调试会发现，在 `ParserInline.prototype.parse` 之后，type 为 inline 的 token 上的 children 属性已经存在了一些子 token。这些子 token 的产生就是 ParserInline 的功劳。而 ParserInline 之后，就是 `linkify`、`replacements`、`smartquotes` 这些 rule 处理了。这些细节，可以在 ParserCore 里面找到。最后我们再回到 `markdownIt` 的 `parse` 部分
+
+```js
+MarkdownIt.prototype.render = function (src, env) {
+  env = env || {};
+
+  return this.renderer.render(this.parse(src, env), this.options, env);
+};
+```
+
+在调用 `this.parse` 之后 生成全部的 tokens。这个时候将 tokens 传入了 `this.renderer.render` 里面，最后渲染出 HTML 字符串。下一篇我们看一下 `render` 的逻辑。
