@@ -293,7 +293,7 @@ ParserInline.prototype.tokenize = function (state) {
 
   处理换行符（`\n`）。
 
-- escape.js
+- **escape.js**
 
   ```js
   module.exports = function escape(state, silent) {
