@@ -213,4 +213,8 @@ Renderer.prototype.render = function (tokens, options, env) {
 
 ## 总结
 
-至此，MarkdownIt 的全部流程已经分析完毕，在整个 parse 抑或是 tokenize、render 的过程中，都是不同的 rule 函数在各司其职，这也就赋予了 MarkdownIt 极大的灵活性和扩展性，你可以去替换 parse rule，也可以去替换 tokenize rule 或者 render rule。那么假如我们需要在 markdown 里面支持 emoji 语法呢，甚至还有更多定制化的需求呢？那我们就必须得写插件，你可能并不需要对某个 rule 的所有细节都知根知底，但是你必须对源码的整体流程是特别熟悉，我们将在插件篇讲解一些比较有趣的插件。
+至此，MarkdownIt 的全部流程已经分析完毕，在整个 parse 抑或是 tokenize、render 的过程中，都是不同的 rule 函数在各司其职，这也就赋予了 MarkdownIt 极大的灵活性和扩展性，你可以去替换 parse rule，也可以去替换 tokenize rule 或者 render rule。来张流程图大致感受一下：
+
+![全流程](https://github.com/theniceangel/markdown-it-analysis/blob/master/images/all.png)
+
+假如我们需要在 markdown 里面支持 emoji 语法呢，甚至还有更多定制化的需求呢？那我们就必须得写插件，你可能并不需要对某个 rule 的所有细节都知根知底，但是你必须对源码的整体流程是特别熟悉，我们将在插件篇讲解一些比较有趣的插件。
