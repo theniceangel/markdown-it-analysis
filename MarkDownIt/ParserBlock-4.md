@@ -22,7 +22,7 @@ parse 函数传入了四个参数：
 1. state.src 代表用户传入的字符串
 2. state.md 是指当前 md 实例，主要是为了方便拿到 md 上的属性与方法
 3. state.env 是在调用 md.parse 注入的一些额外的数据，默认是 `{}`，一般不会需要它，除非你要做一些定制化的开发
-4. tokens 引用。**注意**：不能在 rule 函数里面更改 tokens 引用，必须保证所有的 rule 函数都是在操作统一份 tokens。
+4. tokens 引用。**注意**：不能在 rule 函数里面更改 tokens 引用，必须保证所有的 rule 函数都是在操纵同一份 tokens。
 
 我们再来聚焦 ParserBlock 内部的逻辑。位于 `lib/parser_block.js`。
 
@@ -100,7 +100,7 @@ ParserBlock.prototype.parse = function (src, md, env, outTokens) {
 
 ParserBlock.prototype.State = require('./rules_block/state_block');
 ```
-从构造函数可以看出，ParserBlock 有 11 种 rule，分别为 `table`、`code`、`fence`、`blockquote`、`hr`、`list`、`reference`、`heading`、`lheading`、`html_block`、`paragraph`。经过由这些 rule 组成的 rules chain 之后，就能输出 type 为对应类型的 tokens，这也就是 ParserBlock 的作用所在。ruler 用来管理所有的 rule 以及 rule 所属于的 chain。
+从构造函数可以看出，ParserBlock 有 11 种 rule，分别为 `table`、`code`、`fence`、`blockquote`、`hr`、`list`、`reference`、`heading`、`lheading`、`html_block`、`paragraph`。经过由这些 rule 组成的 rules chain 之后，就能输出 type 为对应类型的 tokens，这也就是 ParserBlock 的作用所在。ruler 用来管理所有的 rule 以及 rule 所属的 chain。
 
 ```js
 for (var i = 0; i < _rules.length; i++) {
@@ -108,7 +108,7 @@ for (var i = 0; i < _rules.length; i++) {
 }
 ```
 
-_rules 是一个二维数组，它的元素也是一个数组，先暂称之为 ruleConfig。ruleConfig 的第一个元素是 rule 的 name。第二个是 rule 的 fn，第三个是 rule 的 alt，也就是所属的职责链。假如 alt 为 `['paragraph', 'reference']`，那么如果调用 `ruler.getRules('paragraph')` 就能返回 `[fn]`，同时调用 `ruler.getRules('reference')` 也能返回 `[fn]`，因为它属于这两种职责链。
+_rules 是一个二维数组，它的元素也是一个数组，先暂称之为 ruleConfig。ruleConfig 的第一个元素是 rule 的 name。第二个是 rule 的 fn，第三个是 rule 的 alt，也就是所属的职责链。假如 alt 为 `['paragraph', 'reference']`，那么如果调用 `ruler.getRules('paragraph')` 就能返回 `[fn]`，同时调用 `ruler.getRules('reference')` 也能返回 `[fn]`，因为 fn 的 alt 数组包含了这两种职责链。
 
 再来看 parse 方法。
 
@@ -125,7 +125,7 @@ ParserBlock.prototype.parse = function (src, md, env, outTokens) {
 ParserBlock.prototype.State = require('./rules_block/state_block');
 ```
 
-先来看属于 ParserBlock 的 State，记得之前 ParserCore 的 State么？也就是在每一个 Parser 的过程中都有一个 State 实例，用来管理他们在 parse 的一些状态。ParserBlock 的 State 是位于 `lib/rules_block/state_block.js`。
+先了解 ParserBlock 的 State，记得之前 ParserCore 的 State 么？也就是在每一个 Parser 的过程中都有一个 State 实例，用来管理他们在 parse 的一些状态。ParserBlock 的 State 是位于 `lib/rules_block/state_block.js`。
 
 ```js
 function StateBlock(src, md, env, tokens) {
@@ -283,9 +283,9 @@ ParserBlock.prototype.tokenize = function (state, startLine, endLine) {
 ```
 函数的执行流程如下：
 
-1. 获取 ParserBlock 构造函数声明的所有 rule 函数，因为在 Ruler 类里面规定，内部的 rule 函数一定属于名字为空字符串的rule chain。当然构造函数还有很多其他的 rule chain。比如 `paragraph`、`reference`、`blockquote`、 `list`，暂时还未用到。同时，声明了很多初始变量。
+1. 获取 ParserBlock 构造函数声明的所有 rule 函数，因为在 Ruler 类里面规定，内部的 rule 函数一定属于名字为空字符串的 rule chain。当然构造函数还有很多其他的 rule chain。比如 `paragraph`、`reference`、`blockquote`、 `list`，暂时还未用到。同时，声明了很多初始变量。
 
-2. 然后走到一个 while 循环，因为 state_block 存放的信息都是以 src 每一行作为维度区分的，比如每一行的起始位置，每一行的终止位置，每一行第一个字符的位置。这些信息都是特定 rule 所需要的。while 语句的前面部分就是跳过空行、是否达到最大嵌套等级的判断，重点关注这行代码。
+2. 然后走到一个 while 循环，因为 state_block 存放的信息都是以 src 字符串每一行作为维度区分的，比如每一行的起始位置，每一行的终止位置，每一行第一个字符的位置。这些信息都是特定 rule 所需要的。while 语句的前面部分就是跳过空行、是否达到最大嵌套等级的判断，重点关注这行代码。
 
 ```js
 for (i = 0; i < len; i++) {
@@ -294,7 +294,7 @@ for (i = 0; i < len; i++) {
 }
 ```
 
-这里的循环，也就是会对 src 的每一行都执行 rule chain，进而产出 token，如果其中一个 rule 返回 true，就跳出循环，准备 tokenize src 的下一行。
+这里的循环，也就是会对 src 的每一行都执行 rule chain，进而产出 token，如果其中一个 rule 返回 true，就跳出循环，准备 tokenize 下一行。
 那我们来看下这些 rules 的作用。它们都位于 `lib/rules_block` 文件夹下面。
 
 - **table.js**
@@ -545,7 +545,7 @@ module.exports = function fence(state, startLine, endLine, silent) {
 
 ```
 
-fence rule 类似于 code rule。它代表具有语言类型的 code_block。比如 javascript、shell、css、stylus等等。举个栗子：
+fence rule 类似于 code rule。它代表具有语言类型的 code_block。比如 javascript、shell、css、stylus 等等。举个栗子：
 
 ```shell
 echo 'done'
@@ -770,8 +770,77 @@ paragraph 那就很简单也是经常用到的，就是生成 p 标签。
 
 ## 总结
 
-综上，可以看出 ParserBlock 的流程还是非常的复杂与繁琐的。首先它拥有自己的 block_state，block_state 存储了 ParserBlock 在 tokenize 过程中需要的很多信息，它将 src 字符串按照换行符分割成了以行作为维度的字符串。在 tokenize 的过程中逐行对字符串运用不同的 rule 函数，生成对应类型的 token，这样就完成了 ParserBlock 的 parse 过程。
+综上，可以看出 ParserBlock 的流程还是非常的复杂与繁琐的。首先它拥有自己的 block_state，block_state 存储了 ParserBlock 在 tokenize 过程中需要的很多信息，它的处理是以 src 换行符为维度。接着在 tokenize 的过程中逐行对字符串运用不同的 rule 函数，生成对应类型的 token，这样就完成了 ParserBlock 的 parse 过程。
 
 ![ParserBlock](https://github.com/theniceangel/markdown-it-analysis/blob/master/images/parser-block.png?raw=true)
 
-在 ParserBlock 处理之后，生成了一种 type 为 inline 的 token。这种 token 属于未完全解析的 token，因为它有一个 children 属性，会存放通过 ParserInline 处理之后的更细粒度的 token。下一张，我们进一步探讨 ParserInline 的整体流程。
+在 ParserBlock 处理之后，可能会生成一种 type 为 inline 的 token。这种 token 属于未完全解析的 token。举个栗子：
+
+```js
+const src = '__ad__'
+
+// 经过 parse 处理之后
+
+const generatedTokens = [
+  {
+    "type": "paragraph_open",
+    "tag": "p",
+    ......
+  },
+  {
+    "type": "inline",
+    "tag": "",
+    "attrs": null,
+    "map": [
+      0,
+      1
+    ],
+    "nesting": 0,
+    "level": 1,
+    "children": [
+      {
+        "type": "text",
+        "tag": "",
+        ......
+      },
+      {
+        "type": "strong_open",
+        "tag": "strong",
+        ......
+      },
+      {
+        "type": "text",
+        "tag": "",
+        ......
+      },
+      {
+        "type": "strong_close",
+        "tag": "strong",
+        ......
+      },
+      {
+        "type": "text",
+        "tag": "",
+        ......
+      }
+    ],
+    "content": "__ad__",
+    "markup": "",
+    "info": "",
+    "meta": null,
+    "block": true,
+    "hidden": false
+  },
+  {
+    "type": "paragraph_close",
+    ......
+  }
+]
+
+// 数组的第二个 token 的 type 为 inline，注意它有个 children 属性
+// children 属性上的 token是怎么来的呢？
+```
+
+本来由 ParserBlock 处理之后，children 为空，但这样的话，第二个 token 的
+content 属性是 "\_\_ad\_\_"，说明加粗的语法还未解析，因此 ParserBlock 的处理还不够
+，我们还需要更细粒度 token，那么这就是 ParserInline 的由来。它的作用就是编译 type 为 inline 的 token，并将更细粒度的 token 放在 它的 children 属性上，这也就是generatedTokens 第二项的 children 属性值的由来。

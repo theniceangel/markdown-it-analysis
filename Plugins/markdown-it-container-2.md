@@ -175,9 +175,9 @@ module.exports = function container_plugin(md, name, options) {
   }
   ```
 
-  生成完 tokens 之后，最后如果是 type 为 `'container_' + name + '_open'` 或 `'container_' + name + '_close'` 的 token，都会走到 `renderDefault` 渲染函数，或者你可以通过 `options.render` 去覆盖它。
+  生成完 tokens 之后，最后如果是 type 为 `'container_' + name + '_open'` 或 `'container_' + name + '_close'` 的 token，都会走到 `renderDefault` 渲染函数。
 
-  `renderDefault` 函数的处理逻辑很简单，就是给最外面的元素加上对应的 className。这样只要在 css 文件里面写了对应 className 的样式，就能渲染出很好看的 container 样式了。举个栗子
+  `renderDefault` 函数的处理逻辑很简单，就是给最外面的元素加上对应的 className。这样只要在 css 文件里面写了对应 className 的样式，就能渲染出很好看的 container 样式了，最后交由 md.renderToken 去生成对应的开标签或者闭字符串。举个栗子
 
   ```js
   const src = `
@@ -185,9 +185,10 @@ module.exports = function container_plugin(md, name, options) {
     这是一个 markdown-container
     :::
   `
-  // output
+  // 加载 warning 规则
   md.use(require('markdown-it-container'), 'warning', {})
-  const output = md.parse(src)
+  // output
+  const output = md.render(src)
   /**
    `<div class="warning">
       <p>这是一个 markdown-container</p>
@@ -195,3 +196,5 @@ module.exports = function container_plugin(md, name, options) {
    `
    */
   ```
+
+  你也可以通过 `options.render` 去覆盖它，来实现更多的细节。

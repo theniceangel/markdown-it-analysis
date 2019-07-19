@@ -92,7 +92,7 @@ function Token(type, tag, nesting) {
 
 - **info**
 
-  type 为 fence 的类型。什么是 fence 呢，如下：
+  type 为 fence 的 token 会有 info 属性。什么是 fence 呢，如下：
 
   ````js
   /**
@@ -102,7 +102,7 @@ function Token(type, tag, nesting) {
   **/
   ````
 
-  注释内部的就是 fence token。它的 info 就是 `js`。
+  上述的注释内部就是 fence token。它的 info 就是 `js`，`markup` 是 "```"。
 
 - **meta**
 
@@ -110,11 +110,11 @@ function Token(type, tag, nesting) {
 
 - **block**
 
-  inline 类型的 token 的 block 为false。
+  ParserCore 生成的 token 的 block 为 true，ParserInline 生成的 token 的 block 为 true。
 
 - **hidden**
 
-  如果为 true，该 token 不会被 rendered。
+  如果为 true，该 token 不会被 render。
 
 接下来看一下原型上的方法。
 
@@ -200,7 +200,10 @@ function Token(type, tag, nesting) {
 ## Token 小结
 
 Token 是 MarkdownIt 内部最基础的类，也是最小的分割单元。它是 parse 的产物，也是 output 的依据。
-再来看下 MarkdownIt 另外的一个类 —— Ruler，可以认为它是职责链函数的管理器。因为它内部存储了很多 rule 函数，而这些功能不同的 rule 的作用就是用来生成 token 并且将 token render 成最后的 HTML 字符串。
+
+## Ruler
+
+再来看下 MarkdownIt 另外的一个类 —— Ruler，可以认为它是职责链函数的管理器。因为它内部存储了很多 rule 函数，rule 的职能分为两种，一种是 parse rule，用来解析用户传入的字符串，生成 token，另一种是 render rule，在产出 token 之后，再根据 token 的类型调用不同的 render rule，最终吐出 HTML 字符串。
 
 先从 constructor 说起。
 
@@ -292,7 +295,7 @@ function Ruler() {
   生成职责链信息。
 
   1. 先通过 \_\_rules\_\_ 的 rule 查找所有的 rule chain 对应的 key 名称。这个时候 rule 的 alt 属性就显得尤为重要，因为它表示除了属于默认的职责链之外，还属于 alt 所对应的职责链。默认存在一个 key 为空字符串('') 的职责链，任何 rule.fn 都属于这个职责链。
-  2. 再将 rule.fn 映射到对应的 key属性上，缓存在 \_\_cache\_\_ 属性上。
+  2. 再将 rule.fn 映射到对应的 key 属性上，缓存在 \_\_cache\_\_ 属性上。
 
   举个栗子：
 
@@ -450,12 +453,12 @@ function Ruler() {
   };
   ```
 
-  根据 rule chain 的 key，获取对应的 fn 执行栈。
+  根据 rule chain 的 key，获取对应的 fn 函数队列。
 
   ## Ruler 小结
 
-  可以看出，Ruler 是相当的灵活，不管是 `at`、`before`、`after`、`enable` 还是其他方法，都赋予了 Ruler 极大的灵活性与扩展性，作为使用方，可以利用这些优秀的架构设计做到自己的高度定制的需求。
+  可以看出，Ruler 是相当的灵活，不管是 `at`、`before`、`after`、`enable` 还是其他方法，都赋予了 Ruler 极大的灵活性与扩展性，作为使用方，可以利用这些优秀的架构设计满足特定需求。
 
   ## 总结
 
-  分析完了 Token 与 Ruler 这些基础类，我们将进一步揭开 MarkdownIt 源码的面纱。后面的文章，再分析怎么从 src 字符串 parse 生成 token 的，token 又是怎么被 renderer.render 输出成最后的字符串的。下一篇，我们将进入 MarkdownIt 的入口 parser —— CoreParser 的分析。
+  分析完了 Token 与 Ruler 这些基础类，我们将进一步揭开 MarkdownIt 源码的面纱。后面的文章，再分析怎么从 src 字符串 parse 生成 token 的，token 又是怎么被 renderer.render 输出成最后的字符串。下一篇，我们将进入 MarkdownIt 的入口 parser —— CoreParser 的分析。

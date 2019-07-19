@@ -57,7 +57,7 @@ function ParserInline() {
 }
 ```
 
-从构造函数看出，ParserInline 不同于 ParserBlock，它是有两个 Ruler 实例的。他们都是在 parse 方法里面用到的， ruler 是在 tokenize 调用的，ruler2 是在 tokenize 之后再使用的。
+从构造函数看出，ParserInline 不同于 ParserBlock，它是有两个 Ruler 实例的。 ruler 是在 tokenize 调用的，ruler2 是在 tokenize 之后再使用的。
 
 ```js
 ParserInline.prototype.tokenize = function (state) {
@@ -103,7 +103,7 @@ ParserInline.prototype.parse = function (str, md, env, outTokens) {
 };
 ```
 
-文章的开头说到将 type 为 inline 的 token 传给 md.inline.parse 方法，这样就走进了 parse 的函数内部，首先生成属于 ParserInline 的 state，还记得 ParserCore 与 ParserBlock 的 state 么？它们的作用都是存放不同 parser 在 parse 过程中的依赖信息。
+文章的开头说到将 type 为 inline 的 token 传给 md.inline.parse 方法，这样就走进了 parse 的函数内部，首先生成属于 ParserInline 的 state，还记得 ParserCore 与 ParserBlock 的 state 么？它们的作用都是存放不同 parser 在 parse 过程中的状态信息。
 
 我们先来看下 State 类，它位于 `lib/rules_inline/state_inline.js`。
 
@@ -565,7 +565,7 @@ ParserInline.prototype.tokenize = function (state) {
 
   解析 HTML 实体标签，比如 `&nbsp;`、`&quot;`、`&apos;` 等等。
 
-这就是 `ParserInline.prototype.tokenize` 的全流程，也就是 type 为 inline 的 token 经过 ruler 的所有 rule 处理之后，生成了不同的 children token 存储到 token 的 children 属性上了。但是 `ParserInline.prototype.parse` 并没有完成，它还要经过 ruler2 的所有 rule 处理。它们分别是 `balance_pairs.js`、`strikethrough.postProcess`、`emphasis.postProcess`、`text_collapse.js`。
+这就是 `ParserInline.prototype.tokenize` 的全流程，也就是 type 为 inline 的 token 经过 ruler 的所有 rule 处理之后，生成了不同的 token 存储到 token 的 children 属性上了。但是 `ParserInline.prototype.parse` 并没有完成，它还要经过 ruler2 的所有 rule 处理。它们分别是 `balance_pairs.js`、`strikethrough.postProcess`、`emphasis.postProcess`、`text_collapse.js`。
 
 - **balance_pairs.js**
 
@@ -687,7 +687,7 @@ ParserInline.prototype.tokenize = function (state) {
   ]
   ```
 
-至此，ParserInline 就已经走完了。如果你打 debugger 调试会发现，在 `ParserInline.prototype.parse` 之后，type 为 inline 的 token 上的 children 属性已经存在了一些子 token。这些子 token 的产生就是 ParserInline 的功劳。而 ParserInline 之后，就是 `linkify`、`replacements`、`smartquotes` 这些 rule 处理了。这些细节，可以在 ParserCore 里面找到。最后我们再回到 `markdownIt` 的 `parse` 部分
+至此，ParserInline 就已经走完了。如果你打 debugger 调试会发现，在 `ParserInline.prototype.parse` 之后，type 为 inline 的 token 上的 children 属性已经存在了一些子 token。这些子 token 的产生就是 ParserInline 的功劳。而 ParserInline 之后，就是 `linkify`、`replacements`、`smartquotes` 这些 rule 函数。细节可以在 ParserCore 里面找到。最后我们再回到 `markdownIt` 的 `parse` 部分
 
 ```js
 MarkdownIt.prototype.render = function (src, env) {
@@ -696,6 +696,8 @@ MarkdownIt.prototype.render = function (src, env) {
   return this.renderer.render(this.parse(src, env), this.options, env);
 };
 ```
+
+那么 `this.parse` 函数执行完成表示所有的 token 都 ready 了，是时候启动渲染器了！
 
 ## 总结
 

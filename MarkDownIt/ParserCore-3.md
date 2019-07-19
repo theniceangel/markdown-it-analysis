@@ -1,6 +1,6 @@
 # ParserCore
 
-这个类的工作是顶级的 rule 执行器。它内部管理了 ParserBlock、ParserInline、linkify、replacements 等 rule 函数。也就是说，用户传入一个字符串，然后经历了这些 rule chain 之后，得到了一个由许多 token 组成的 tokens 数组。最后再交由 renderer 实例的 rule chain 输出一个 HTML 字符串。
+编译的核心管理者，掌握着不同类型的 token 生成的流程。它内部管理了 ParserBlock、ParserInline、linkify、replacements 等 rule 函数。也就是说，用户传入一个字符串，经历了这些 rule 函数处理之后，得到了一个由许多 token 组成的 tokens 数组，最后再交由 renderer 处理之后，吐出 HTML 字符串。
 
 先看下 MarkdownIt 的执行逻辑。
 
@@ -80,7 +80,7 @@ for (const rule of rules) {
 // 最后在 md.parse 函数体内部返回 state.tokens
 ```
 
-因此我们的关注点就在于这些属于 parserCore 的 rule 到底是做了一些什么？state 又是什么呢？先来看下属于 parserCore 的 state。它位于 `lib/rules_core/state_core.js`
+因此我们的关注点就在于这些属于 parserCore 的 rule 到底是做了什么工作？state 又是什么呢？先来看下属于 parserCore 的 state。它位于 `lib/rules_core/state_core.js`
 
 ```js
 function StateCore(src, md, env) {
@@ -94,9 +94,9 @@ function StateCore(src, md, env) {
 StateCore.prototype.Token = Token;
 ```
 
-类比较简单，`src` 用来放用户输入的字符串，tokens 用来 parse 出来的 token。`inlineMode` 表示 parse 的时候是否编译成 type 为 inline 的 token。`md` 就是当前 MarkdownIt 的示例。
+`src` 用来放用户输入的字符串，tokens 存放编译出来的 token。`inlineMode` 表示 parse 的时候是否编译成 type 为 inline 的 token。`md` 就是当前 MarkdownIt 的实例。
 
-而属于 ParserCore 的 rules 到底是具有啥作用呢，我们先粗略了解一下。它们都在 `lib/rules_core` 文件夹。
+而属于 ParserCore 的 rules 的职能是什么？我们先粗略了解一下。它们都在 `lib/rules_core` 文件夹。
 
 1. **normalize.js**
 
@@ -134,7 +134,7 @@ module.exports = function block(state) {
 };
 ```
 
-内部逻辑很清晰，先判断是否开启 inline 模式的 parse。否则通过 md 调用 ParserBlock 的 parse 方法。这一步是将换行分隔符(`\n`) 作为 src 的划分界限，生成很多 block 为 true 的token。我们在接下来的一篇关于 ParserBlock 分析的文章里面详细阐述。
+内部逻辑很清晰，先判断是否开启 inline 模式的 parse。否则通过 md 调用 ParserBlock 的 parse 方法。这一步是将换行分隔符(`\n`) 作为 src 的划分界限，生成很多 block 为 true 的 token。我们在接下来的一篇关于 ParserBlock 分析的文章里面详细阐述。
 
 3. **inline.js**
 
@@ -152,7 +152,7 @@ module.exports = function inline(state) {
 };
 ```
 
-这一步是在 ParserBlock 之后的，因为 ParserBlock 处理之后会生成 type 为 inline 的token。这种 token 属于未完全解析的 token，需要 ParserInline 进一步处理，生成新的token。这些新生成的token 会存放在 children 属性上。举个栗子来说：
+这一步是在 ParserBlock 之后的，因为 ParserBlock 处理之后会生成 type 为 inline 的token。这种 token 属于未完全解析的 token，需要 ParserInline 进一步处理，生成新的token。这些新生成的 token 会存放在 children 属性上。举个栗子来说：
 
 ```js
 const src = '__ad__'
@@ -163,11 +163,11 @@ md.render(src)
 {
   type: "inline",
   tag: "",
-  attrs:null,
-  block:true,
-  children:[]
-  content:"__ad__",
-  hidden:false,
+  attrs: null,
+  block: true,
+  children: []
+  content: "__ad__",
+  hidden: false,
   ...
   type:"inline"
 }
@@ -198,7 +198,7 @@ md.render(src)
 // 最后传给 md.renderer.render 之后，就能生成加粗的文字了。
 ```
 
-ParserInline 的揭秘，安排在 ParserBlock 的下一篇。
+ParserInline 的揭秘，会在另外一片文章详细分析。
 
 4. **linkify.js**
 
@@ -311,7 +311,7 @@ module.exports = function linkify(state) {
 };
 ```
 
-这个 rule 的作用就是将 URL-like 的字符串转化成超链接。rule 是否执行，是根据你实例化 md 传入的 `options.linkify` 有关。内部检测 URL-like 的字符串用的库是 `linkify-it`。里面对很多种 url 格式做了检验，有兴趣的可以详细研究一下。
+这个 rule 的作用就是将 URL-like 的字符串转化成超链接。rule 是否执行，是取决于你实例化 md 传入的 `options.linkify`。内部检测 URL-like 的字符串用的库是 `linkify-it`。里面对很多种 url 格式做了检验，有兴趣的可以详细研究一下。
 
 5. **replacements.js**
 
@@ -361,7 +361,13 @@ module.exports = function replace(state) {
 
 ## 小结
 
-如此一来，我们从宏观的角度全面分析了 MarkdownIt 的 parse、tokenize、render 的全流程。代码的整体设计思路非常的清晰，内部的源码注释也是非常的丰富到位，但是如果有细心的同学，会发现如下的一段代码，很有意思。
+如此一来，我们从宏观的角度全面分析了 MarkdownIt 的 parse、tokenize、render 的全流程。代码的整体设计思路非常的清晰，内部的源码注释也是非常的丰富到位，用一张图来简单阐述下流程。
+
+TODO 补一种图
+
+
+
+但是如果有细心的同学，会发现如下的一段代码，很有意思。
 
 ```js
 Core.prototype.process = function (state) {
@@ -375,7 +381,7 @@ Core.prototype.process = function (state) {
 };
 ```
 
-在调用 process 的函数体内部，每次调用一个 rule，会将 state 传入。state 上又有一个 tokens 属性存储了所有的 token。因此我们发现，所有 rule 函数内部必须维持对 state.tokens 和 state 的引用不变，所以不能做类似于以下的赋值操作。
+在调用 process 的函数体内部，每次调用一个 rule，会将 state 传入。state 的 tokens 属性存储了所有的 token。因此我们发现，所有 rule 函数内部必须维持对 state.tokens 和 state 的引用不变，因此不能做类似于以下的赋值操作。
 
 ```js
 function rule (state) {
@@ -387,7 +393,7 @@ function rule (state) {
 // 第二个语句错误的原因，是改了 tokens 的指向。这样接下的 rule 函数拿到的 state.tokens 就丢失了之前 rule 生成的 tokens。
 ```
 
-这种函数在函数式编程里面叫做拥有副作用的函数，因为输入的 state 在函数内部做了改变，也造成了 state 的改变。这也是 javascript 里面基础类型与引用类型的区别。但是 MarkdownIt 的整体架构设计就是基于这种引用类型的机制，否则必须在 rule 里面返回每次新生成的 tokens，并且统一管理。
+这种函数在函数式编程里面叫做拥有副作用的函数，因为输入的 state 在函数内部发生了变化，导致外层 state 也被改变。这也是 javascript 里面基础类型与引用类型的区别。但是 MarkdownIt 的整体架构设计就是基于这种引用类型的机制，否则必须在 rule 里面返回每次新生成的 tokens，并且统一管理。
 
 ## 总结
 

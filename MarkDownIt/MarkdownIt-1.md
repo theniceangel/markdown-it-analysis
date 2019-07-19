@@ -1,4 +1,4 @@
-`markdown-it` 是一个 parser。它接收一些字符串，并且按照指定的规则（Rule）输出一些 HTML 字符串。既然是接受字符串，那么如下所见
+`markdown-it` 是一个 parser。它接收一些字符串，并且经过内部的 rule 函数处理之后，调用 render 之后输出 HTML 字符串。既然是接受字符串，那么如下所见
 
 ```js
 // node.js
@@ -14,7 +14,9 @@ var result = md.render('# markdown-it rulezz!');
 // output "<h1>markdown-it rulezz!</h1>"
 ```
 
-输入一定格式的字符串给 md，输出 HTML 字符串，只要将其 append 到 DOM Tree 中，即可完成渲染。简单易懂。那么内部的 parse 机制到底是怎样的呢，先从入口文件 `markdown-it-lib/index.js` 入手。
+输入一定格式的字符串给 md，输出 HTML 字符串，只要将其 append 到 DOM Tree 中，即可完成渲染。简单易懂。
+
+那么内部的 parse 机制到底是怎样的呢？先从入口文件 `markdown-it/lib/index.js` 入手。
 
 ```js
 function MarkdownIt(presetName, options) {
@@ -147,7 +149,6 @@ function MarkdownIt(presetName, options) {
 
   this.core = new ParserCore();
 
-  // 输出编译后的 HTML 字符串
   this.renderer = new Renderer();
   ```
 
@@ -314,6 +315,12 @@ MarkdownIt.prototype.renderInline = function (src, env) {
 };
 
 ```
+
+## 小结
+
+从整体来看，MarkdownIt 的流程如下图：
+
+TODO 【补一张图】
 
 随着一步步对 MarkdownIt 的剖析之后，是不是惊叹于 Markdown 的架构设计，至少对于我来说，很多信息通过代码的组织以及变量命名就已经传达给我了，这也体现了阅读优秀源码的好处。
 

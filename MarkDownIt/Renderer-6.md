@@ -102,7 +102,15 @@ function Renderer() {
 }
 ```
 
-`default_rules` 对象是有很多渲染不同 type 的 token的 rule 函数。比如：`code_inline` 是渲染 "`" 语法的，`fence` 是渲染 "``` language" 语法的，`html_block` 是渲染 HTMl 标签的，等等。我们再来细看 `render` 方法的逻辑。
+`default_rules` 对象存在不同类型的 token 渲染函数。
+
+```markup
+  1. `code_inline` 是渲染 `我是 code_inline ` 语法
+  2. `fence` 是渲染 ``` js ``` 语法
+  3. `html_block` 是渲染 HTMl 标签
+```
+
+再来细看 `render` 方法的逻辑，因为 内部使用到这些渲染函数。
 
 ```js
 Renderer.prototype.render = function (tokens, options, env) {
@@ -126,7 +134,7 @@ Renderer.prototype.render = function (tokens, options, env) {
 };
 ```
 
-`render` 逻辑很简单，传入 tokens，options，env。遍历所有的 token，根据它的 type 采用不同的渲染 rule 规则。
+`render` 逻辑很简单，传入 tokens，options，env。遍历所有的 token，根据它的 type 采用不同的渲染 rule 函数。
 
 -  **type 是 inline**
 
@@ -150,11 +158,11 @@ Renderer.prototype.render = function (tokens, options, env) {
     };
     ```
 
-    `renderInline` 是处理 `type = inline` 的 token。据我们之前分析的 ParserInline，它的作用是进一步解析 `type = inline` 的 token，并且它的 children 属性是存放编译出来的 token。那么 `renderInline` 的第一个参数 tokens 就是 `type = inline` 的 token 的 children 属性值了。可以看到如果 renderer.rules，也就是上面的 default_rules 如果存在对应类型的渲染 rule 函数，就会用这个渲染 rule 函数去处理对应 type 的 token，否则通通走 `render.renderToken` 的逻辑。
+    据我们之前分析的 ParserInline，它的作用是进一步解析 `type` 为 `inline` 的 token，并且它的 children 属性上放了编译出来的 token。那么 `renderInline` 就是用到它的 children 上的 token。如果 renderer.rules存在对应类型的渲染 rule 函数，就会用这个渲染 rule 函数去处理对应 type 的 token，否则都走 `render.renderToken` 的逻辑。
 
 - **typeof rules[type] !== 'undefined'**
 
-  `render` 函数体内遍历的 `else if` 就是用不同渲染 rule 来处理对应 type 的 token。每个 rule 都很简单，就不细谈。
+  用不同渲染 rule 来处理对应 type 的 token。比如 type 为 fence 的就用 default_rule.fence 来渲染。每个 rule 都很简单，就不细谈。
 
 - **renderToken**
 
@@ -209,7 +217,7 @@ Renderer.prototype.render = function (tokens, options, env) {
 
   `renderToken` 的作用就是渲染开标签或者闭合标签，内部还会调用 `renderAttrs` 来生成 `attributes`。
 
-`render` 的最后，就是输出 HTML 字符串。也即是 `md.parse` 的输出了。
+`render` 的最后，就是输出 HTML 字符串。
 
 ## 总结
 
