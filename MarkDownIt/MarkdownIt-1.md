@@ -320,7 +320,7 @@ MarkdownIt.prototype.renderInline = function (src, env) {
 
 从整体来看，MarkdownIt 的流程如下图：
 
-![全流程](https://github.com/theniceangel/markdown-it-analysis/blob/master/images/markdown-it-flowchart.png?raw=true)
+![全流程](https://raw.githubusercontent.com/theniceangel/markdown-it-analysis/master/images/markdow-it-flowchat.png)
 
 随着一步步对 MarkdownIt 的剖析之后，是不是惊叹于 Markdown 的架构设计，至少对于我来说，很多信息通过代码的组织以及变量命名就已经传达给我了，这也体现了阅读优秀源码的好处。
 
