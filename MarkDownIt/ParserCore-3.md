@@ -363,9 +363,7 @@ module.exports = function replace(state) {
 
 如此一来，我们从宏观的角度全面分析了 MarkdownIt 的 parse、tokenize、render 的全流程。代码的整体设计思路非常的清晰，内部的源码注释也是非常的丰富到位，用一张图来简单阐述下流程。
 
-TODO 补一种图
-
-
+![parser-core](https://raw.githubusercontent.com/theniceangel/markdown-it-analysis/master/images/parse-core.png)
 
 但是如果有细心的同学，会发现如下的一段代码，很有意思。
 
