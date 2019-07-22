@@ -703,6 +703,6 @@ MarkdownIt.prototype.render = function (src, env) {
 
 我们先来张流程图，大致看下 parse 的过程。
 
-![parser-inline](https://raw.githubusercontent.com/theniceangel/markdown-it-analysis/master/images/parse-inline.png)
+![parser-inline](https://raw.githubusercontent.com/theniceangel/markdown-it-analysis/master/images/parser-inline.png)
 
 在调用 `this.parse` 之后 生成全部的 tokens。这个时候将 tokens 传入了 `this.renderer.render` 里面，最后渲染出 HTML 字符串。下一篇我们看一下 `render` 的逻辑。
