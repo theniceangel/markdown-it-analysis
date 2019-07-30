@@ -772,7 +772,7 @@ paragraph 那就很简单也是经常用到的，就是生成 p 标签。
 
 综上，可以看出 ParserBlock 的流程还是非常的复杂与繁琐的。首先它拥有自己的 block_state，block_state 存储了 ParserBlock 在 tokenize 过程中需要的很多信息，它的处理是以 src 换行符为维度。接着在 tokenize 的过程中逐行对字符串运用不同的 rule 函数，生成对应类型的 token，这样就完成了 ParserBlock 的 parse 过程。
 
-![parser-block](https://raw.githubusercontent.com/theniceangel/markdown-it-analysis/master/images/parse-block.png)
+![parser-block](https://raw.githubusercontent.com/theniceangel/markdown-it-analysis/master/images/parser-block.png)
 
 在 ParserBlock 处理之后，可能会生成一种 type 为 inline 的 token。这种 token 属于未完全解析的 token。举个栗子：
 
